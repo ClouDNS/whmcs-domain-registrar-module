@@ -4,7 +4,7 @@ if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
 
-require_once __DIR__ . '/lib/cloudns-php-sdk/ClouDNS_SDK.php';
+require_once __DIR__ . '/lib/ClouDNS_SDK.php';
 
 
 function cloudns_MetaData() {

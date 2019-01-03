@@ -1,3 +1,0 @@
-[submodule "modules/registrars/cloudns/lib/cloudns-php-sdk"]
-	path = modules/registrars/cloudns/lib/cloudns-php-sdk
-	url = https://github.com/ClouDNS/cloudns-php-sdk.git
