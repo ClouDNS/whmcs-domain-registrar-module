@@ -357,7 +357,7 @@ function cloudns_AdminCustomButtonArray($params) {
     return [
         // "Show Child NS" => "CustomGetChildNameservers",
         // "Sync" => "Sync",
-        // "Resend RAA verification" => "ResendIRTPVerificationEmail",
+        "Resend RAA verification" => "ResendIRTPVerificationEmail",
         // "Get RAA status" => "GetRAAstatus",
     ];
 }

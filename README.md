@@ -15,6 +15,9 @@ The following registrar core functionality is provided:
 * allow viewing and changing of nameservers
 * allow viewing and changing of glue records
 * allow viewing and changing of WHOIS information of domains
+* transfer domains
+* obtain domain transfer code
+* resend RAA verification email
 
 Additionally, also these features are provided:
 
