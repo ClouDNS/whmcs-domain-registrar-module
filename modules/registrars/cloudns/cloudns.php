@@ -5,6 +5,7 @@ if (!defined("WHMCS")) {
 }
 
 require_once __DIR__ . '/lib/ClouDNS_SDK.php';
+require_once __DIR__ . '/lib/domain_verificaton_rules.php';
 
 
 function cloudns_MetaData() {
@@ -41,180 +42,6 @@ function cloudns_getConfigArray() {
 
 function cloudns_RegisterDomain($params) {
     try {
-        $tlds = [
-
-            '^(fr|re|pm|tf|wf|yt)$' => function($domain_params, $generic_register_params) {
-                $register_params = $generic_register_params;
-
-                # registrant_type
-                $register_params['registrant_type'] = strtoupper($domain_params['additionalfields']['Legal Type']);
-                # birth_date
-                $register_params['birth_date'] = $domain_params['additionalfields']['Birthdate'];
-                # birth_cc
-                $register_params['birth_cc'] = $domain_params['additionalfields']['Birthplace Country'];
-                # birth_city
-                $register_params['birth_city'] = $domain_params['additionalfields']['Birthplace City'];
-                # birth_zip
-                $register_params['birth_zip'] = $domain_params['additionalfields']['Birthplace Postcode'];
-                # publication
-                $register_params['publication'] = 1;
-                # vat
-                $register_params['vat'] = $domain_params['additionalfields']['VAT Number'];
-                # siren
-                $register_params['siren'] = $domain_params['additionalfields']['SIRET Number'];
-                # duns
-                $register_params['duns'] = $domain_params['additionalfields']['DUNS Number'];
-                # trademark
-                $register_params['trademark'] = $domain_params['additionalfields']['Trademark Number'];
-
-                return $register_params;
-            },
-
-            '^it$' => function($domain_params, $generic_register_params) {
-                $register_params = $generic_register_params;
-
-                # registrant_type
-                $type = array_search(
-                    $domain_params['additionalfields']['Legal Type'],
-                    [
-                        "Italian and foreign natural persons",
-                        "Companies/one man companies",
-                        "Freelance workers/professionals",
-                        "non-profit organizations",
-                        "public organizations",
-                        "other subjects",
-                        "non natural foreigners",
-                    ]
-                );
-                $register_params['registrant_type'] = $type + 1;
-                # code
-                $register_params['code'] = $domain_params['additionalfields']['Tax ID'];
-                # publicity
-                $register_params['publicity'] = ($domain_params['additionalfields']['Publish Personal Data'] ? 1 : 0 );
-                # birth_cc
-                $register_params['birth_cc'] = $domain_params['countrycode'];
-
-                return $register_params;
-            },
-
-            '^ru$' => function($domain_params, $generic_register_params) {
-                $register_params = $generic_register_params;
-
-                # registrant_type
-                $register_params['registrant_type'] = ($domain_params['additionalfields']['Registrant Type'] == 'ORG' ? 'ORG' : 'PRS');
-                # birth_date
-                $date = date_parse($domain_params['additionalfields']['Individuals Birthday']);
-                $register_params['birth_date'] = "{$date['day']}.{$date['month']}.{$date['year']}";
-                # code
-                $register_params['code'] = $domain_params['additionalfields']['Russian Organizations Taxpayer Number 1'];
-                # kpp
-                $register_params['kpp'] = $domain_params['additionalfields']['Russian Organizations Territory-Linked Taxpayer Number 2'];
-                # passport_number
-                $register_params['passport_number'] = $domain_params['additionalfields']['Individuals Passport Number'];
-                # passport_issued_by
-                $register_params['passport_issued_by'] = $domain_params['additionalfields']['Individuals Passport Issuer'];
-                # passport_issued_on
-                $date = date_parse($domain_params['additionalfields']['Individuals Passport Issue Date']);
-                $register_params['passport_issued_on'] = "{$date['day']}.{$date['month']}.{$date['year']}";
-
-                return $register_params;
-            },
-
-            '^ca$' => function($domain_params, $generic_register_params) {
-                $register_params = $generic_register_params;
-
-                $types = [
-                    'Corporation' => 'CCO',
-                    'Canadian Citizen' => 'CCT',
-                    'Permanent Resident of Canada' => 'RES',
-                    'Government' => 'GOV',
-                    'Canadian Educational Institution' => 'EDU',
-                    'Canadian Unincorporated Association' => 'ASS',
-                    'Canadian Hospital' => 'HOP',
-                    'Partnership Registered in Canada' => 'PRT',
-                    'Trade-mark registered in Canada' => 'TDM',
-                    'Canadian Trade Union' => 'TRD',
-                    'Canadian Political Party' => 'PLT',
-                    'Canadian Library Archive or Museum' => 'LAM',
-                    'Trust established in Canada' => 'TRS',
-                    'Aboriginal Peoples' => 'ABO',
-                    'Legal Representative of a Canadian Citizen' => 'LGR',
-                    'Official mark registered in Canada' => 'OMK',
-                ];
-                $register_params['registrant_type'] = $types[$domain_params['additionalfields']['Legal Type']];
-
-                return $register_params;
-            },
-
-            '^es$' => function($domain_params, $generic_register_params) {
-                $register_params = $generic_register_params;
-
-                # registrant_type
-                $register_params['registrant_type'] = $domain_params['additionalfields']['Legal Form'];
-                # registrant_type_id
-                $types = [
-                    'Other Identification' => 0,
-                    'Tax Identification Number' => 1,
-                    'Tax Identification Code' => 1,
-                    'Foreigner Identification Number' => 3,
-                ];
-                $register_params['registrant_type_id'] = $types[$domain_params['additionalfields']['ID Form Type']];
-                # code
-                $register_params['code'] = $domain_params['additionalfields']['ID Form Number'];
-
-                return $register_params;
-            },
-
-            '^(com|net).au$' => function($domain_params, $generic_register_params) {
-                $register_params = $generic_register_params;
-
-                # registrant_type
-                $register_params['registrant_type'] = $domain_params['additionalfields']['Registrant ID Type'];
-                # registrant_type_id
-                $register_params['registrant_type_id'] = $domain_params['additionalfields']['Registrant ID'];
-                # registrant_policy
-                $register_params['registrant_policy'] = ($domain_params['additionalfields']['Eligibility Reason'] == "Domain name is an Exact Match Abbreviation or Acronym of your Entity or Trading Name." ? 1 : 2);
-                # trademark
-                $register_params['trademark'] = $domain_params['additionalfields']['Eligibility Type'];
-
-                return $register_params;
-            },
-
-            '(^|\.)br$' => function($domain_params, $generic_register_params) {
-                $register_params = $generic_register_params;
-
-                # Not implemented by WHMCS:
-                # registrant_type
-                # code
-
-                return $register_params;
-            },
-
-            '(^|\.)cn$' => function($domain_params, $generic_register_params) {
-                $register_params = $generic_register_params;
-
-                # registrant_type
-                $register_params['registrant_type'] = ($domain_params['additionalfields']['cnhosting'] ? 'cnhosting' : 'nocnhosting');
-
-                # Not implemented by WHMCS:
-                # code
-
-                return $register_params;
-            },
-
-            '(^|\.)ro$' => function($domain_params, $generic_register_params) {
-                $register_params = $generic_register_params;
-
-                # registrant_type
-                $register_params['registrant_type'] = $domain_params['additionalfields']['Registrant Type'];
-                # registrant_type_id
-                $register_params['registrant_type_id'] = $domain_params['additionalfields']['Registration Number'];
-                # code
-                $register_params['code'] = $domain_params['additionalfields']['CNPFiscalCode'];
-
-                return $register_params;
-            },
-        ];
 
         $ns_fields = [$params['ns1'], $params['ns2'], $params['ns3'], $params['ns4'], $params['ns5']];
         $nameservers = array_filter(array_map('trim', $ns_fields));
@@ -260,6 +87,8 @@ function cloudns_RegisterDomain($params) {
             'passport_issued_by'    => false,
             'passport_issued_on'    => false,
         ];
+
+        $tlds = cloudns_get_tlds();
 
         foreach ($tlds as $tld_re => $register_params_generator) {
             if (preg_match("/$tld_re/", $params['tld'])) {
@@ -527,7 +356,9 @@ function cloudns_Sync($params) {
 function cloudns_AdminCustomButtonArray($params) {
     return [
         // "Show Child NS" => "CustomGetChildNameservers",
-        "Sync" => "Sync",
+        // "Sync" => "Sync",
+        // "Resend RAA verification" => "ResendIRTPVerificationEmail",
+        // "Get RAA status" => "GetRAAstatus",
     ];
 }
 
@@ -581,6 +412,149 @@ function cloudns_IDProtectToggle($params) {
                 throw new Exception($res['statusDescription']);
             }
         }
+    }
+    catch (\Exception $e) {
+        return ['error' => $e->getMessage()];
+    }
+}
+
+function cloudns_GetEPPCode($params) {
+    try {
+        if ($params['Is sub user']) {
+            return ['error' => 'This function is not available for sub users.'];
+        }
+
+        $api = new ClouDNS_SDK($params['User'], $params['Password'], (bool)$params['Is sub user']);
+        $res = $api->domainsGetTransferCode($params['domainname']);
+
+        logModuleCall($params['registrar'], __FUNCTION__, $params['domainname'], $res);
+
+        if ($res['transfer_code']) {
+            // If EPP Code is returned, return it for display to the end user
+            return ['eppcode' => $res['transfer_code']];
+        } else {
+            // If EPP Code is not returned
+            return ['error' => 'Can\'t obtain domain transfer code. Please contact support.'];
+        }
+    }
+    catch (\Exception $e) {
+        return ['error' => $e->getMessage()];
+    }
+}
+
+function cloudns_TransferDomain($params) {
+    try {
+
+        if ($params['Is sub user']) {
+            return ['error' => 'This function is not available for sub users.'];
+        }
+
+        $ns_fields = [$params['ns1'], $params['ns2'], $params['ns3'], $params['ns4'], $params['ns5']];
+        $nameservers = array_filter(array_map('trim', $ns_fields));
+        $address = implode(', ', array_filter(array_map('trim', [$params['address1'], $params['address2']])));
+
+        $generic_transfer_params = [
+            'domain_name'           => $params['sld'],
+            'tld'                   => $params['tld'],
+            'mail'                  => $params['email'],
+            'name'                  => $params['fullname'],
+            'company'               => $params['companyname'],
+            'address'               => $address,
+            'city'                  => $params['city'],
+            'state'                 => $params['state'],
+            'zip'                   => $params['postcode'],
+            'country'               => $params['countrycode'],
+            'telnocc'               => $params['phonecc'],
+            'telno'                 => $params['phonenumber'],
+            'faxnocc'               => false,
+            'faxno'                 => false,
+            'transfer_code'         => $params['eppcode'],
+            'registrant_type'       => false,
+            'birth_date'            => false,
+            'birth_cc'              => false,
+            'birth_city'            => false,
+            'birth_zip'             => false,
+            'publication'           => false,
+            'vat'                   => false,
+            'siren'                 => false,
+            'duns'                  => false,
+            'trademark'             => false,
+            'waldec'                => false,
+            'registrant_type_other' => false,
+            'privacy_protection'    => false,
+            'code'                  => false,
+            'registrant_type_id'    => false,
+            'publicity'             => false,
+            'ns'                    => $nameservers,
+            'kpp'                   => false,
+            'passport_number'       => false,
+            'passport_issued_by'    => false,
+            'passport_issued_on'    => false,
+        ];
+
+        $tlds = cloudns_get_tlds();
+
+        foreach ($tlds as $tld_re => $transfer_params_generator) {
+            if (preg_match("/$tld_re/", $params['tld'])) {
+                if (is_callable($transfer_params_generator)) {
+                    $transfer_params = $transfer_params_generator($params, $generic_transfer_params);
+                    break;
+                }
+                throw new Exception("Function \$transfer_params_generator() does not exist for {$params['tld']} TLD!");
+            }
+        }
+
+        if (!$transfer_params) {
+            $transfer_params = $generic_transfer_params;
+        }
+
+        $api = new ClouDNS_SDK($params['User'], $params['Password'], (bool)$params['Is sub user']);
+        $res = call_user_func_array([$api, 'domainsTransferDomain'], $transfer_params);
+        logModuleCall($params['registrar'], __FUNCTION__, $transfer_params, $res);
+
+        if ($res['status'] != 'Success') {
+            throw new Exception($res['statusDescription']);
+        }
+    }
+    catch (\Exception $e) {
+        return ['error' => $e->getMessage()];
+    }
+}
+
+function cloudns_ResendIRTPVerificationEmail($params) {
+    try {
+
+        if ($params['Is sub user']) {
+            return ['error' => 'This function is not available for sub users.'];
+        }
+
+        $api = new ClouDNS_SDK($params['User'], $params['Password'], (bool)$params['Is sub user']);
+        $res = $api->domainsResendRAAVerification($params['domainname']);
+        logModuleCall($params['registrar'], __FUNCTION__, $params['domainname'], $res);
+
+        if ($res['status'] != 'Success') {
+            throw new Exception($res['statusDescription']);
+        }
+        else {
+            return ['success' => true];
+        }
+    }
+    catch (\Exception $e) {
+        return ['error' => $e->getMessage()];
+    }
+}
+
+function cloudns_GetRAAstatus($params) {
+    try {
+
+        if ($params['Is sub user']) {
+            return ['error' => 'This function is not available for sub users.'];
+        }
+
+        $api = new ClouDNS_SDK($params['User'], $params['Password'], (bool)$params['Is sub user']);
+        $res = $api->domainsGetRAAStatus($params['domainname']);
+        logModuleCall($params['registrar'], __FUNCTION__, $params['domainname'], $res);
+
     }
     catch (\Exception $e) {
         return ['error' => $e->getMessage()];

@@ -218,10 +218,10 @@ class ClouDNS_SDK {
 	public function dnsGetDynamicURL ($domain_name, $record_id) {
 		$data = '&domain-name=' . $domain_name . '&record-id=' . $record_id;
 		$url = 'dns/get-dynamic-url';
-		
+
 		return $this->apiRequest($data, $url);
 	}
-	
+
 	public function dnsDisableDynamicURL($domain_name, $record_id) {
 		$data = '&domain-name=' . $domain_name . '&record-id=' . $record_id;
 		$url = 'dns/disable-dynamic-url';
@@ -271,7 +271,7 @@ class ClouDNS_SDK {
 
 		return $this->apiRequest($data, $url);
 	}
-	
+
 	public function dnsMailForwardsStats() {
 		$url = 'dns/get-mailforward-stats';
 
